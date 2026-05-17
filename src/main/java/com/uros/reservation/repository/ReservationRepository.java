@@ -33,10 +33,21 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                       @Param("startTime") LocalDateTime startTime,
                                       @Param("endTime") LocalDateTime endTime);
 
-    // Count active reservations for capacity-based
+    // Count active reservations for capacity-based (quantity sum)
     @Query("SELECT COALESCE(SUM(r.quantity), 0) FROM CapacityBasedReservation r WHERE r.resource.id = :resourceId " +
            "AND r.status IN ('HELD', 'CONFIRMED')")
     long sumActiveQuantityByResource(@Param("resourceId") Long resourceId);
+
+    // Count active reservations for any resource type (generic - used for utilization)
+    @Query("SELECT COUNT(r) FROM Reservation r WHERE r.resource.id = :resourceId " +
+           "AND r.status IN ('HELD', 'CONFIRMED')")
+    long countActiveByResource(@Param("resourceId") Long resourceId);
+
+    // Count resource-based reservations currently in progress (ongoing right now)
+    @Query("SELECT COUNT(r) FROM ResourceBasedReservation r WHERE r.resource.id = :resourceId " +
+           "AND r.status IN ('HELD', 'CONFIRMED') AND r.startTime <= :now AND r.endTime > :now")
+    long countFutureActiveByResource(@Param("resourceId") Long resourceId,
+                                     @Param("now") LocalDateTime now);
 
     // Find expired held reservations
     @Query("SELECT r FROM Reservation r WHERE r.status = 'HELD' AND r.holdExpiresAt < :now")

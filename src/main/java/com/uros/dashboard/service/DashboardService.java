@@ -66,7 +66,19 @@ public class DashboardService {
         List<Resource> resources = resourceRepository.findByIsActiveTrue();
 
         return resources.stream().map(resource -> {
-            long active = reservationRepository.sumActiveQuantityByResource(resource.getId());
+            ReservationType resType = resource.getResourceType().getReservationType();
+
+            // CAPACITY_BASED sums quantity; RESOURCE_BASED only counts future/ongoing;
+            // all other types count individual active reservations
+            long active;
+            if (resType == ReservationType.CAPACITY_BASED) {
+                active = reservationRepository.sumActiveQuantityByResource(resource.getId());
+            } else if (resType == ReservationType.RESOURCE_BASED) {
+                active = reservationRepository.countFutureActiveByResource(resource.getId(), LocalDateTime.now());
+            } else {
+                active = reservationRepository.countActiveByResource(resource.getId());
+            }
+
             int capacity = resource.getTotalCapacity() != null && resource.getTotalCapacity() > 0
                     ? resource.getTotalCapacity() : 1;
             double utilization = Math.min(((double) active / capacity) * 100.0, 100.0);
