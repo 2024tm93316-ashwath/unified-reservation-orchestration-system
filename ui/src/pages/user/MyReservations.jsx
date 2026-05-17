@@ -39,7 +39,7 @@ export default function MyReservations() {
   };
 
   return (
-    <div>
+    <div className="page-wrapper">
       <TopBar
         title="My Reservations"
         subtitle={`All reservations for ${user.displayName}`}

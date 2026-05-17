@@ -44,7 +44,7 @@ export default function ResourcesPage() {
   const loadSubData = async (resource) => {
     setSelectedResource(resource);
     try {
-      const type = resource.resourceType?.reservationType;
+      const type = resource.reservationType;
       if (type === 'TIME_BASED') {
         const r = await getTimeSlotsByResource(resource.id);
         setSubData(r.data?.data ?? r.data ?? []);
@@ -74,7 +74,7 @@ export default function ResourcesPage() {
   const submitResource = async (e) => {
     e.preventDefault();
     try {
-      await createResource({ ...rForm, resourceTypeId: Number(rForm.resourceTypeId), totalCapacity: Number(rForm.totalCapacity) });
+      await createResource({ ...rForm, resourceTypeId: Number(rForm.resourceTypeId), totalCapacity: rForm.totalCapacity ? Number(rForm.totalCapacity) : null });
       toast.success('Resource created');
       setModal(null);
       setRForm({ name: '', description: '', resourceTypeId: '', totalCapacity: '' });
@@ -124,10 +124,10 @@ export default function ResourcesPage() {
     catch (e) { toast.error(e.message); }
   };
 
-  const resType = selectedResource?.resourceType?.reservationType;
+  const resType = selectedResource?.reservationType;
 
   return (
-    <div>
+    <div className="page-wrapper">
       <TopBar
         title="Resources"
         subtitle="Manage resource types, resources, and their configurations"
@@ -207,8 +207,8 @@ export default function ResourcesPage() {
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>{res.name}</div>
                       <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', marginTop: 2 }}>
-                        {typeIcon(res.resourceType?.reservationType)} {typeLabel(res.resourceType?.reservationType)}
-                        {' · '}Cap: {res.totalCapacity}
+                        {typeIcon(res.reservationType)} {typeLabel(res.reservationType)}
+                        {res.totalCapacity ? ` · Cap: ${res.totalCapacity}` : ''}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -240,7 +240,7 @@ export default function ResourcesPage() {
                     <div>
                       <div className="card__title">{selectedResource.name}</div>
                       <div className="card__subtitle">
-                        {typeIcon(resType)} {typeLabel(resType)} · Capacity: {selectedResource.totalCapacity}
+                        {typeIcon(resType)} {typeLabel(resType)} {selectedResource.totalCapacity ? `· Capacity: ${selectedResource.totalCapacity}` : ''}
                       </div>
                     </div>
                     {resType === 'TIME_BASED' && <button className="btn btn-primary btn-sm" onClick={() => setModal('slot')}><Plus size={14} /> Add Slot</button>}
@@ -352,11 +352,13 @@ export default function ResourcesPage() {
                 <input className="form-control" placeholder="e.g. GlamUp Salon - Room A" value={rForm.name}
                   onChange={(e) => setRForm({ ...rForm, name: e.target.value })} required />
               </div>
-              <div className="form-group">
-                <label className="form-label">Total Capacity <span>*</span></label>
-                <input type="number" min={1} className="form-control" placeholder="e.g. 100" value={rForm.totalCapacity}
-                  onChange={(e) => setRForm({ ...rForm, totalCapacity: e.target.value })} required />
-              </div>
+              {resourceTypes.find(rt => rt.id === Number(rForm.resourceTypeId))?.reservationType === 'CAPACITY_BASED' && (
+                <div className="form-group">
+                  <label className="form-label">Total Capacity <span>*</span></label>
+                  <input type="number" min={1} className="form-control" placeholder="e.g. 100" value={rForm.totalCapacity}
+                    onChange={(e) => setRForm({ ...rForm, totalCapacity: e.target.value })} required />
+                </div>
+              )}
               <div className="form-group">
                 <label className="form-label">Description</label>
                 <input className="form-control" placeholder="Optional description" value={rForm.description}

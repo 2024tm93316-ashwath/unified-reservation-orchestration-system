@@ -24,6 +24,9 @@ public class PolicyService {
     @Transactional
     public PolicyResponse create(PolicyRequest request) {
         ResourceType type = resourceTypeService.getEntity(request.getResourceTypeId());
+        if (repository.findByResourceTypeId(type.getId()).isPresent()) {
+            throw new com.uros.common.exception.ConflictException("A policy already exists for this resource type");
+        }
         Policy entity = Policy.builder()
                 .resourceType(type)
                 .maxBookingsPerUser(request.getMaxBookingsPerUser() != null ? request.getMaxBookingsPerUser() : 5)

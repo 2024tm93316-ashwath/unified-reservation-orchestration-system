@@ -1,6 +1,7 @@
 package com.uros.resource.service;
 
 import com.uros.common.exception.ResourceNotFoundException;
+import com.uros.reservation.repository.ReservationRepository;
 import com.uros.resource.dto.TimeSlotRequest;
 import com.uros.resource.dto.TimeSlotResponse;
 import com.uros.resource.model.Resource;
@@ -19,6 +20,7 @@ public class TimeSlotService {
 
     private final TimeSlotRepository repository;
     private final ResourceService resourceService;
+    private final ReservationRepository reservationRepository;
 
     @Transactional
     public TimeSlotResponse create(TimeSlotRequest request) {
@@ -51,6 +53,7 @@ public class TimeSlotService {
     }
 
     private TimeSlotResponse toResponse(TimeSlot entity) {
+        long currentBookings = reservationRepository.countActiveByTimeSlot(entity.getId());
         return TimeSlotResponse.builder()
                 .id(entity.getId())
                 .resourceId(entity.getResource().getId())
@@ -58,6 +61,7 @@ public class TimeSlotService {
                 .endTime(entity.getEndTime())
                 .maxParallelCapacity(entity.getMaxParallelCapacity())
                 .isActive(entity.getIsActive())
+                .currentBookings(currentBookings)
                 .build();
     }
 }

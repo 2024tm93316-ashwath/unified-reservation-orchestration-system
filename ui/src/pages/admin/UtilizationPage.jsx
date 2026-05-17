@@ -9,8 +9,8 @@ export default function UtilizationPage() {
   const list = Array.isArray(data) ? data : [];
 
   return (
-    <div>
-      <TopBar title="Resource Utilization" subtitle="Real-time capacity usage across all resources" />
+    <div className="page-wrapper">
+      <TopBar title="Utilization" subtitle="Resource usage and capacity analytics" />
       <div className="app-content animate-fade-in">
         {loading ? (
           <div className="loading-screen"><div className="spinner spinner-lg" /></div>

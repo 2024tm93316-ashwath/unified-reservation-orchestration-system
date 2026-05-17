@@ -27,6 +27,7 @@ public class ResourceBasedReservationStrategy implements ReservationStrategy {
 
     private final ReservationRepository reservationRepository;
     private final ResourceService resourceService;
+    private final com.uros.policy.repository.PolicyRepository policyRepository;
 
     @Override
     public AvailabilityResponse checkAvailability(AvailabilityRequest request) {
@@ -34,10 +35,20 @@ public class ResourceBasedReservationStrategy implements ReservationStrategy {
             throw new BadRequestException("Start time and end time are required for resource-based availability check");
         }
 
-        List<Reservation> overlapping = reservationRepository.findOverlapping(
-                request.getResourceId(), request.getStartTime(), request.getEndTime());
+        Resource resource = resourceService.getEntity(request.getResourceId());
+        boolean allowOverlapping = false;
+        com.uros.policy.model.Policy policy = policyRepository.findByResourceTypeId(resource.getResourceType().getId()).orElse(null);
+        if (policy != null && Boolean.TRUE.equals(policy.getAllowOverlapping())) {
+            allowOverlapping = true;
+        }
 
-        boolean available = overlapping.isEmpty();
+        boolean available = true;
+        if (!allowOverlapping) {
+            List<Reservation> overlapping = reservationRepository.findOverlapping(
+                    request.getResourceId(), request.getStartTime(), request.getEndTime());
+            available = overlapping.isEmpty();
+        }
+
         return AvailabilityResponse.builder()
                 .available(available)
                 .availableCount(available ? 1 : 0)
@@ -54,23 +65,39 @@ public class ResourceBasedReservationStrategy implements ReservationStrategy {
 
         Resource resource = resourceService.getEntity(request.getResourceId());
 
-        // Conflict detection
-        List<Reservation> overlapping = reservationRepository.findOverlapping(
-                request.getResourceId(), request.getStartTime(), request.getEndTime());
-
-        if (!overlapping.isEmpty()) {
-            throw new ConflictException("Resource has conflicting reservations for the requested time range");
+        // Check policies
+        boolean allowOverlapping = false;
+        com.uros.policy.model.Policy policy = policyRepository.findByResourceTypeId(resource.getResourceType().getId()).orElse(null);
+        if (policy != null) {
+            if (Boolean.TRUE.equals(policy.getAllowOverlapping())) {
+                allowOverlapping = true;
+            }
+            if (policy.getMaxAdvanceBookingDays() != null) {
+                LocalDateTime maxAllowedDate = LocalDateTime.now().plusDays(policy.getMaxAdvanceBookingDays());
+                if (request.getStartTime() != null && request.getStartTime().isAfter(maxAllowedDate)) {
+                    throw new BadRequestException("Cannot book more than " + policy.getMaxAdvanceBookingDays() + " days in advance. Max allowed date is: " + maxAllowedDate.toLocalDate());
+                }
+            }
         }
 
-        Reservation reservation = Reservation.builder()
-                .resource(resource)
-                .userId(request.getUserId())
-                .reservationType(ReservationType.RESOURCE_BASED)
-                .status(ReservationStatus.HELD)
-                .startTime(request.getStartTime())
-                .endTime(request.getEndTime())
-                .holdExpiresAt(LocalDateTime.now().plusMinutes(holdDurationMinutes))
-                .build();
+        if (!allowOverlapping) {
+            // Conflict detection
+            List<Reservation> overlapping = reservationRepository.findOverlapping(
+                    request.getResourceId(), request.getStartTime(), request.getEndTime());
+
+            if (!overlapping.isEmpty()) {
+                throw new ConflictException("Resource has conflicting reservations for the requested time range");
+            }
+        }
+
+        com.uros.reservation.model.ResourceBasedReservation reservation = new com.uros.reservation.model.ResourceBasedReservation();
+        reservation.setResource(resource);
+        reservation.setUserId(request.getUserId());
+        reservation.setReservationType(ReservationType.RESOURCE_BASED);
+        reservation.setStatus(ReservationStatus.HELD);
+        reservation.setStartTime(request.getStartTime());
+        reservation.setEndTime(request.getEndTime());
+        reservation.setHoldExpiresAt(LocalDateTime.now().plusMinutes(holdDurationMinutes));
 
         return reservationRepository.save(reservation);
     }

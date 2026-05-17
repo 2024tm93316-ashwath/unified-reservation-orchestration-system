@@ -56,14 +56,13 @@ public class CapacityBasedReservationStrategy implements ReservationStrategy {
             throw new ConflictException("Insufficient capacity. Available: " + available + ", Requested: " + requestedQty);
         }
 
-        Reservation reservation = Reservation.builder()
-                .resource(resource)
-                .userId(request.getUserId())
-                .reservationType(ReservationType.CAPACITY_BASED)
-                .status(ReservationStatus.HELD)
-                .quantity(requestedQty)
-                .holdExpiresAt(LocalDateTime.now().plusMinutes(holdDurationMinutes))
-                .build();
+        com.uros.reservation.model.CapacityBasedReservation reservation = new com.uros.reservation.model.CapacityBasedReservation();
+        reservation.setResource(resource);
+        reservation.setUserId(request.getUserId());
+        reservation.setReservationType(ReservationType.CAPACITY_BASED);
+        reservation.setStatus(ReservationStatus.HELD);
+        reservation.setQuantity(requestedQty);
+        reservation.setHoldExpiresAt(LocalDateTime.now().plusMinutes(holdDurationMinutes));
 
         return reservationRepository.save(reservation);
     }

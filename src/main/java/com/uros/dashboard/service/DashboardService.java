@@ -33,6 +33,22 @@ public class DashboardService {
             byType.put(type.name(), reservationRepository.countByReservationType(type));
         }
 
+        Map<String, Long> last7DaysCounts = new java.util.LinkedHashMap<>();
+        // Initialize with zeros for the last 7 days
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("MMM dd");
+        for (int i = 6; i >= 0; i--) {
+            last7DaysCounts.put(LocalDateTime.now().minusDays(i).format(formatter), 0L);
+        }
+
+        // Group actual reservations by day
+        List<com.uros.reservation.model.Reservation> recentReservations = reservationRepository.findCreatedSince(sevenDaysAgo);
+        for (com.uros.reservation.model.Reservation r : recentReservations) {
+            String day = r.getCreatedAt().format(formatter);
+            if (last7DaysCounts.containsKey(day)) {
+                last7DaysCounts.put(day, last7DaysCounts.get(day) + 1);
+            }
+        }
+
         return DashboardStats.builder()
                 .totalReservations(reservationRepository.count())
                 .activeHolds(reservationRepository.countByStatus(ReservationStatus.HELD))
@@ -42,6 +58,7 @@ public class DashboardService {
                 .reservationsLast7Days(reservationRepository.countCreatedSince(sevenDaysAgo))
                 .bookingsLast7Days(bookingRepository.countConfirmedSince(sevenDaysAgo))
                 .reservationsByType(byType)
+                .last7DaysCounts(last7DaysCounts)
                 .build();
     }
 

@@ -37,7 +37,7 @@ export default function AdminDashboard() {
   const pieData = stats ? [
     { name: 'Held', value: stats.activeHolds || 0 },
     { name: 'Confirmed', value: stats.confirmedBookings || 0 },
-    { name: 'Cancelled', value: stats.cancelledReservations || 0 },
+    { name: 'Cancelled', value: stats.cancelledBookings || 0 },
     { name: 'Expired', value: stats.expiredReservations || 0 },
   ] : [];
 
@@ -46,7 +46,7 @@ export default function AdminDashboard() {
     : [];
 
   return (
-    <div>
+    <div className="page-wrapper">
       <TopBar title="Dashboard" subtitle="System overview and analytics" />
       <div className="app-content animate-fade-in">
         {loading ? (
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
                 change="Temporary holds pending confirmation" />
               <StatCard label="Confirmed Bookings" value={stats?.confirmedBookings ?? 0}
                 icon={TrendingUp} color="#10b981" bg="rgba(16,185,129,0.12)" />
-              <StatCard label="Cancellations" value={stats?.cancelledReservations ?? 0}
+              <StatCard label="Cancellations" value={stats?.cancelledBookings ?? 0}
                 icon={XCircle} color="#ef4444" bg="rgba(239,68,68,0.12)" />
             </div>
 

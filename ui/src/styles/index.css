@@ -137,6 +137,13 @@ img, svg { display: block; }
   transition: margin-left var(--transition);
 }
 
+.page-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
 .app-content {
   flex: 1;
   overflow-y: auto;

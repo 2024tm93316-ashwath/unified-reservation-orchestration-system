@@ -26,7 +26,7 @@ export default function PoliciesPage() {
   const openCreate = () => { setForm(DEFAULT_FORM); setEditId(null); setModal('form'); };
   const openEdit = (p) => {
     setForm({
-      resourceTypeId: p.resourceType?.id ?? '',
+      resourceTypeId: p.resourceTypeId ?? '',
       maxBookingsPerUser: p.maxBookingsPerUser,
       holdDurationMinutes: p.holdDurationMinutes,
       maxAdvanceBookingDays: p.maxAdvanceBookingDays,
@@ -55,7 +55,7 @@ export default function PoliciesPage() {
 
   const columns = [
     { key: 'id', label: 'ID', width: 60, render: (v) => `#${v}` },
-    { key: 'resourceType', label: 'Resource Type', render: (v) => v?.name ?? '—' },
+    { key: 'resourceTypeName', label: 'Resource Type', render: (v) => v ?? '—' },
     { key: 'maxBookingsPerUser', label: 'Max/User' },
     { key: 'holdDurationMinutes', label: 'Hold (min)' },
     { key: 'maxAdvanceBookingDays', label: 'Advance (days)' },
@@ -76,7 +76,7 @@ export default function PoliciesPage() {
   ];
 
   return (
-    <div>
+    <div className="page-wrapper">
       <TopBar
         title="Policies"
         subtitle="Configure reservation rules per resource type"
@@ -125,14 +125,23 @@ export default function PoliciesPage() {
                 <input type="number" min={1} className="form-control" value={form.maxAdvanceBookingDays}
                   onChange={(e) => setForm({ ...form, maxAdvanceBookingDays: Number(e.target.value) })} />
               </div>
-              <div className="form-group">
-                <label className="form-label">Allow Overlapping</label>
-                <select className="form-control" value={form.allowOverlapping}
-                  onChange={(e) => setForm({ ...form, allowOverlapping: e.target.value === 'true' })}>
-                  <option value="false">No</option>
-                  <option value="true">Yes</option>
-                </select>
-              </div>
+              
+              {(() => {
+                const selectedRt = rtypeList.find(rt => rt.id == form.resourceTypeId);
+                if (selectedRt && selectedRt.reservationType === 'RESOURCE_BASED') {
+                  return (
+                    <div className="form-group">
+                      <label className="form-label">Allow Overlapping</label>
+                      <select className="form-control" value={form.allowOverlapping}
+                        onChange={(e) => setForm({ ...form, allowOverlapping: e.target.value === 'true' })}>
+                        <option value="false">No</option>
+                        <option value="true">Yes</option>
+                      </select>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
           <div className="modal__footer">

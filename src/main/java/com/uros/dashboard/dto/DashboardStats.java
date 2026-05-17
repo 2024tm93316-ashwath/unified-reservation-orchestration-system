@@ -20,5 +20,6 @@ public class DashboardStats {
     private long reservationsLast7Days;
     private long bookingsLast7Days;
     private Map<String, Long> reservationsByType;
+    private Map<String, Long> last7DaysCounts;
 }
 

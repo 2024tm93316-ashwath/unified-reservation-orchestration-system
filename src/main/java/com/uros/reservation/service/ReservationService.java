@@ -58,12 +58,12 @@ public class ReservationService {
         if (policy != null) {
             holdDuration = policy.getHoldDurationMinutes();
 
-            // Check max bookings per user
-            long userActiveCount = reservationRepository.countActiveByUserAndResourceType(
-                    request.getUserId(), resource.getResourceType().getId());
-            if (userActiveCount >= policy.getMaxBookingsPerUser()) {
-                throw new ConflictException("User has reached the maximum number of active bookings ("
-                        + policy.getMaxBookingsPerUser() + ") for this resource type");
+            // Check per-reservation quantity limit
+            int incomingQuantity = request.getQuantity() != null ? request.getQuantity() : 1;
+            
+            if (incomingQuantity > policy.getMaxBookingsPerUser()) {
+                throw new com.uros.common.exception.ConflictException("Booking quantity limit exceeded. Policy allows max " + 
+                        policy.getMaxBookingsPerUser() + " per reservation. You requested " + incomingQuantity + ".");
             }
         }
 
@@ -169,23 +169,31 @@ public class ReservationService {
     }
 
     private ReservationResponse toResponse(Reservation r) {
-        return ReservationResponse.builder()
+        ReservationResponse.ReservationResponseBuilder builder = ReservationResponse.builder()
                 .id(r.getId())
                 .resourceId(r.getResource().getId())
                 .resourceName(r.getResource().getName())
                 .userId(r.getUserId())
                 .reservationType(r.getReservationType())
                 .status(r.getStatus())
-                .timeSlotId(r.getTimeSlot() != null ? r.getTimeSlot().getId() : null)
-                .seatMapId(r.getSeatMap() != null ? r.getSeatMap().getId() : null)
-                .quotaDefinitionId(r.getQuotaDefinition() != null ? r.getQuotaDefinition().getId() : null)
-                .startTime(r.getStartTime())
-                .endTime(r.getEndTime())
-                .quantity(r.getQuantity())
                 .holdExpiresAt(r.getHoldExpiresAt())
                 .createdAt(r.getCreatedAt())
-                .updatedAt(r.getUpdatedAt())
-                .build();
+                .updatedAt(r.getUpdatedAt());
+
+        if (r instanceof com.uros.reservation.model.TimeBasedReservation) {
+            builder.timeSlotId(((com.uros.reservation.model.TimeBasedReservation) r).getTimeSlot() != null ? ((com.uros.reservation.model.TimeBasedReservation) r).getTimeSlot().getId() : null);
+        } else if (r instanceof com.uros.reservation.model.SeatBasedReservation) {
+            builder.seatMapId(((com.uros.reservation.model.SeatBasedReservation) r).getSeatMap() != null ? ((com.uros.reservation.model.SeatBasedReservation) r).getSeatMap().getId() : null);
+        } else if (r instanceof com.uros.reservation.model.QuotaBasedReservation) {
+            builder.quotaDefinitionId(((com.uros.reservation.model.QuotaBasedReservation) r).getQuotaDefinition() != null ? ((com.uros.reservation.model.QuotaBasedReservation) r).getQuotaDefinition().getId() : null);
+        } else if (r instanceof com.uros.reservation.model.ResourceBasedReservation) {
+            builder.startTime(((com.uros.reservation.model.ResourceBasedReservation) r).getStartTime())
+                   .endTime(((com.uros.reservation.model.ResourceBasedReservation) r).getEndTime());
+        } else if (r instanceof com.uros.reservation.model.CapacityBasedReservation) {
+            builder.quantity(((com.uros.reservation.model.CapacityBasedReservation) r).getQuantity());
+        }
+
+        return builder.build();
     }
 }
 

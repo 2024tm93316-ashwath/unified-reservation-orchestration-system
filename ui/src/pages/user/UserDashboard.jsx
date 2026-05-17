@@ -29,8 +29,8 @@ export default function UserDashboard() {
   };
 
   return (
-    <div>
-      <TopBar title={`Welcome, ${user.displayName}!`} subtitle="Your reservation overview" />
+    <div className="page-wrapper">
+      <TopBar title={`Welcome back, ${user.displayName}!`} subtitle="Here is a summary of your activity" />
       <div className="app-content animate-fade-in">
         {/* Quick Action Banner */}
         <div className="card" style={{

@@ -18,5 +18,6 @@ public class TimeSlotResponse {
     private LocalDateTime endTime;
     private Integer maxParallelCapacity;
     private Boolean isActive;
+    private Long currentBookings;
 }
 

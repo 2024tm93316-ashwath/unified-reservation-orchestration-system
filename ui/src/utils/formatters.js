@@ -55,7 +55,7 @@ export const typeIcon = (type) => {
 export const typeLabel = (type) => {
   const map = {
     TIME_BASED: 'Time-Based',
-    RESOURCE_BASED: 'Resource-Based',
+    RESOURCE_BASED: 'Asset-Based',
     SEAT_BASED: 'Seat-Based',
     QUOTA_BASED: 'Quota-Based',
     CAPACITY_BASED: 'Capacity-Based',

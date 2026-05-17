@@ -33,6 +33,7 @@ public class TimeBasedReservationStrategy implements ReservationStrategy {
     private final TimeSlotRepository timeSlotRepository;
     private final TimeSlotService timeSlotService;
     private final ResourceService resourceService;
+    private final com.uros.policy.repository.PolicyRepository policyRepository;
 
     @Override
     public AvailabilityResponse checkAvailability(AvailabilityRequest request) {
@@ -68,20 +69,28 @@ public class TimeBasedReservationStrategy implements ReservationStrategy {
         TimeSlot slot = timeSlotService.getEntity(request.getTimeSlotId());
         Resource resource = resourceService.getEntity(request.getResourceId());
 
+        // Check max advance booking days
+        com.uros.policy.model.Policy policy = policyRepository.findByResourceTypeId(resource.getResourceType().getId()).orElse(null);
+        if (policy != null && policy.getMaxAdvanceBookingDays() != null) {
+            LocalDateTime maxAllowedDate = LocalDateTime.now().plusDays(policy.getMaxAdvanceBookingDays());
+            if (slot.getStartTime() != null && slot.getStartTime().isAfter(maxAllowedDate)) {
+                throw new BadRequestException("Cannot book more than " + policy.getMaxAdvanceBookingDays() + " days in advance. Max allowed date is: " + maxAllowedDate.toLocalDate());
+            }
+        }
+
         // Concurrency-safe: check availability inside transaction
         long activeCount = reservationRepository.countActiveByTimeSlot(slot.getId());
         if (activeCount >= slot.getMaxParallelCapacity()) {
             throw new ConflictException("Time slot is fully booked. No capacity remaining.");
         }
 
-        Reservation reservation = Reservation.builder()
-                .resource(resource)
-                .userId(request.getUserId())
-                .reservationType(ReservationType.TIME_BASED)
-                .status(ReservationStatus.HELD)
-                .timeSlot(slot)
-                .holdExpiresAt(LocalDateTime.now().plusMinutes(holdDurationMinutes))
-                .build();
+        com.uros.reservation.model.TimeBasedReservation reservation = new com.uros.reservation.model.TimeBasedReservation();
+        reservation.setResource(resource);
+        reservation.setUserId(request.getUserId());
+        reservation.setReservationType(ReservationType.TIME_BASED);
+        reservation.setStatus(ReservationStatus.HELD);
+        reservation.setTimeSlot(slot);
+        reservation.setHoldExpiresAt(LocalDateTime.now().plusMinutes(holdDurationMinutes));
 
         return reservationRepository.save(reservation);
     }

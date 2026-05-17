@@ -16,15 +16,15 @@ export default function BrowseCatalogue() {
 
   const resources = Array.isArray(data) ? data.filter((r) => r.isActive) : [];
   const filtered = resources.filter((r) => {
-    const matchType = typeFilter === 'ALL' || r.resourceType?.reservationType === typeFilter;
+    const matchType = typeFilter === 'ALL' || r.reservationType === typeFilter;
     const q = search.toLowerCase();
-    const matchSearch = !q || r.name?.toLowerCase().includes(q) || r.resourceType?.name?.toLowerCase().includes(q);
+    const matchSearch = !q || r.name?.toLowerCase().includes(q) || r.resourceTypeName?.toLowerCase().includes(q);
     return matchType && matchSearch;
   });
 
   return (
-    <div>
-      <TopBar title="Resource Catalogue" subtitle="Browse all available resources" />
+    <div className="page-wrapper">
+      <TopBar title="Resource Catalogue" subtitle="Browse and book available resources" />
       <div className="app-content animate-fade-in">
         {/* Search + filters */}
         <div className="card" style={{ marginBottom: 'var(--space-5)', padding: 'var(--space-4) var(--space-5)' }}>
@@ -62,7 +62,7 @@ export default function BrowseCatalogue() {
             </div>
             <div className="grid-3">
               {filtered.map((res) => {
-                const t = res.resourceType?.reservationType;
+                const t = res.reservationType;
                 return (
                   <div className="resource-card" key={res.id}
                     onClick={() => navigate('/user/book', { state: { resource: res } })}>

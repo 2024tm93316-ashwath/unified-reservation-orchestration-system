@@ -75,22 +75,21 @@ public class QuotaBasedReservationStrategy implements ReservationStrategy {
         quota.setCurrentUsage(quota.getCurrentUsage() + 1);
         quotaDefinitionRepository.save(quota);
 
-        Reservation reservation = Reservation.builder()
-                .resource(resource)
-                .userId(request.getUserId())
-                .reservationType(ReservationType.QUOTA_BASED)
-                .status(ReservationStatus.HELD)
-                .quotaDefinition(quota)
-                .holdExpiresAt(LocalDateTime.now().plusMinutes(holdDurationMinutes))
-                .build();
+        com.uros.reservation.model.QuotaBasedReservation reservation = new com.uros.reservation.model.QuotaBasedReservation();
+        reservation.setResource(resource);
+        reservation.setUserId(request.getUserId());
+        reservation.setReservationType(ReservationType.QUOTA_BASED);
+        reservation.setStatus(ReservationStatus.HELD);
+        reservation.setQuotaDefinition(quota);
+        reservation.setHoldExpiresAt(LocalDateTime.now().plusMinutes(holdDurationMinutes));
 
         return reservationRepository.save(reservation);
     }
 
     @Override
     public void releaseResources(Reservation reservation) {
-        if (reservation.getQuotaDefinition() != null) {
-            QuotaDefinition quota = quotaDefinitionRepository.findById(reservation.getQuotaDefinition().getId()).orElse(null);
+        if (reservation instanceof com.uros.reservation.model.QuotaBasedReservation) {
+            QuotaDefinition quota = quotaDefinitionRepository.findById(((com.uros.reservation.model.QuotaBasedReservation) reservation).getQuotaDefinition().getId()).orElse(null);
             if (quota != null && quota.getCurrentUsage() > 0) {
                 quota.setCurrentUsage(quota.getCurrentUsage() - 1);
                 quotaDefinitionRepository.save(quota);

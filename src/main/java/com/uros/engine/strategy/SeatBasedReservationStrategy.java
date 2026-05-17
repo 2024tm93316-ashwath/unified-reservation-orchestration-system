@@ -80,22 +80,21 @@ public class SeatBasedReservationStrategy implements ReservationStrategy {
         seat.setIsAvailable(false);
         seatMapRepository.save(seat);
 
-        Reservation reservation = Reservation.builder()
-                .resource(resource)
-                .userId(request.getUserId())
-                .reservationType(ReservationType.SEAT_BASED)
-                .status(ReservationStatus.HELD)
-                .seatMap(seat)
-                .holdExpiresAt(LocalDateTime.now().plusMinutes(holdDurationMinutes))
-                .build();
+        com.uros.reservation.model.SeatBasedReservation reservation = new com.uros.reservation.model.SeatBasedReservation();
+        reservation.setResource(resource);
+        reservation.setUserId(request.getUserId());
+        reservation.setReservationType(ReservationType.SEAT_BASED);
+        reservation.setStatus(ReservationStatus.HELD);
+        reservation.setSeatMap(seat);
+        reservation.setHoldExpiresAt(LocalDateTime.now().plusMinutes(holdDurationMinutes));
 
         return reservationRepository.save(reservation);
     }
 
     @Override
     public void releaseResources(Reservation reservation) {
-        if (reservation.getSeatMap() != null) {
-            SeatMap seat = seatMapRepository.findById(reservation.getSeatMap().getId()).orElse(null);
+        if (reservation instanceof com.uros.reservation.model.SeatBasedReservation) {
+            SeatMap seat = seatMapRepository.findById(((com.uros.reservation.model.SeatBasedReservation) reservation).getSeatMap().getId()).orElse(null);
             if (seat != null) {
                 seat.setIsAvailable(true);
                 seatMapRepository.save(seat);

@@ -57,7 +57,7 @@ export default function ReservationsPage() {
   ];
 
   return (
-    <div>
+    <div className="page-wrapper">
       <TopBar
         title="Reservations"
         subtitle="Monitor and manage all system reservations"

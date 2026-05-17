@@ -19,6 +19,7 @@ public class SeatMapService {
 
     private final SeatMapRepository repository;
     private final ResourceService resourceService;
+    private final com.uros.reservation.repository.ReservationRepository reservationRepository;
 
     @Transactional
     public SeatMapResponse create(SeatMapRequest request) {
@@ -49,13 +50,14 @@ public class SeatMapService {
     }
 
     private SeatMapResponse toResponse(SeatMap entity) {
+        boolean isBooked = reservationRepository.countActiveBySeatMap(entity.getId()) > 0;
         return SeatMapResponse.builder()
                 .id(entity.getId())
                 .resourceId(entity.getResource().getId())
                 .seatIdentifier(entity.getSeatIdentifier())
                 .seatRow(entity.getSeatRow())
                 .seatColumn(entity.getSeatColumn())
-                .isAvailable(entity.getIsAvailable())
+                .isAvailable(entity.getIsAvailable() && !isBooked)
                 .build();
     }
 }

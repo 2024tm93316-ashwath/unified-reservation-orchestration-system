@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import TopBar from '../../components/common/TopBar';
 import { useAuth } from '../../context/AuthContext';
 import {
-  getResources, getTimeSlotsByResource, getAvailableSeatsByResource,
+  getResources, getTimeSlotsByResource, getSeatsByResource,
   getQuotasByResource,
 } from '../../api/resourceApi';
 import {
@@ -54,9 +54,9 @@ export default function BookingFlow() {
 
   useEffect(() => {
     if (!selectedResource) return;
-    const type = selectedResource.resourceType?.reservationType;
+    const type = selectedResource.reservationType;
     if (type === 'TIME_BASED') getTimeSlotsByResource(selectedResource.id).then((r) => setTimeSlots(r.data?.data ?? r.data ?? []));
-    if (type === 'SEAT_BASED') getAvailableSeatsByResource(selectedResource.id).then((r) => setSeats(r.data?.data ?? r.data ?? []));
+    if (type === 'SEAT_BASED') getSeatsByResource(selectedResource.id).then((r) => setSeats(r.data?.data ?? r.data ?? []));
     if (type === 'QUOTA_BASED') getQuotasByResource(selectedResource.id).then((r) => setQuotas(r.data?.data ?? r.data ?? []));
   }, [selectedResource]);
 
@@ -76,7 +76,7 @@ export default function BookingFlow() {
     return () => clearInterval(interval);
   }, [reservation]);
 
-  const resType = selectedResource?.resourceType?.reservationType;
+  const resType = selectedResource?.reservationType;
 
   const handleCheckAvailability = async () => {
     const payload = { resourceId: selectedResource.id };
@@ -125,7 +125,7 @@ export default function BookingFlow() {
   };
 
   return (
-    <div>
+    <div className="page-wrapper">
       <TopBar title="Book a Resource" subtitle="Follow the steps to complete your reservation" />
       <div className="app-content animate-fade-in">
         <div className="booking-flow">
@@ -151,7 +151,7 @@ export default function BookingFlow() {
               ) : (
                 <div className="grid-2">
                   {resources.filter((r) => r.isActive).map((res) => {
-                    const t = res.resourceType?.reservationType;
+                    const t = res.reservationType;
                     return (
                       <div key={res.id}
                         className={`resource-card${selectedResource?.id === res.id ? ' selected' : ''}`}
@@ -161,9 +161,11 @@ export default function BookingFlow() {
                         </div>
                         <div className="resource-card__name">{res.name}</div>
                         <div className="resource-card__type">{typeLabel(t)}</div>
-                        <div style={{ marginTop: 8, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                          Capacity: {res.totalCapacity}
-                        </div>
+                        {res.totalCapacity ? (
+                          <div style={{ marginTop: 8, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                            Capacity: {res.totalCapacity}
+                          </div>
+                        ) : null}
                       </div>
                     );
                   })}
@@ -186,7 +188,7 @@ export default function BookingFlow() {
                   <div className="card__title">
                     {typeIcon(resType)} {selectedResource.name}
                   </div>
-                  <div className="card__subtitle">{typeLabel(resType)} · Capacity: {selectedResource.totalCapacity}</div>
+                  <div className="card__subtitle">{typeLabel(resType)} {selectedResource.totalCapacity ? `· Capacity: ${selectedResource.totalCapacity}` : ''}</div>
                 </div>
                 <button className="btn btn-ghost btn-sm" onClick={() => { setSelectedResource(null); setStep(0); }}>
                   ← Change
